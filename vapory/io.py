@@ -117,21 +117,17 @@ def render_povstring(string, outfile=None, height=None, width=None,
             cmd.append('+L%s'%dir)
     cmd.append("Output_File_Type=%s"%format_type)
     cmd.append("+O%s"%outfile)
-    process = subprocess.Popen(cmd, stderr=subprocess.PIPE,
-                                    stdin=subprocess.PIPE,
-                                    stdout=subprocess.PIPE)
-
-    out, err = process.communicate(string.encode('ascii'))
+    process = subprocess.run(cmd, capture_output=True)
 
     if remove_temp:
         os.remove(pov_file)
 
-    if process.returncode:
-        print(type(err), err)
-        raise IOError("POVRay rendering failed with the following error: "+err.decode('ascii'))
+    if process.check_returncode():
+        print(type(process.stderr), process.stderr)
+        raise IOError("POVRay rendering failed with the following error: "+process.stderr.decode('ascii'))
 
     if return_np_array:
-        return ppm_to_numpy(buffer=out)
+        return ppm_to_numpy(buffer=process.stdout)
 
     if display_in_ipython:
         if not ipython_found:
